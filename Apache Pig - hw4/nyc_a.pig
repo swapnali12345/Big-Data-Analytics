@@ -1,0 +1,14 @@
+rows = load 'nyc_taxi_data_2014.csv' using PigStorage(',');
+records = filter rows by $0 != 'vendor_id';
+records2= foreach records generate $4 as trip_distance, $17 as total_amount;
+a= FILTER records2 by ($0 is not null) AND ($1 is not null);
+g = group a all;
+average = foreach g generate AVG(a.$0), AVG(a.$1);
+c = foreach a generate $0-average.$0,$1-average.$1;
+d= foreach c generate $0*$1, $0*$0;
+e = group d all;
+f = foreach e generate SUM(d.$0),SUM(d.$1);
+beta1 = foreach f generate $0/$1;
+beta0 = foreach average generate average.$1- beta1.$0* average.$0;
+ans = foreach beta1 generate beta1.$0, beta0.$0;
+dump ans;
